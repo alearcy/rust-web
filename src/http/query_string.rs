@@ -7,7 +7,7 @@ pub struct QueryString<'buf> {
 
 #[derive(Debug)]
 pub enum Value<'buf> {
-    Sinlge(&'buf str),
+    Single(&'buf str),
     Multiple(Vec<&'buf str>),
 }
 
@@ -29,12 +29,12 @@ impl<'buf> From<&'buf str> for QueryString<'buf> {
             }
             data.entry(key)
                 .and_modify(|existing: &mut Value| match existing {
-                    Value::Sinlge(prev_value) => {
+                    Value::Single(prev_value) => {
                         *existing = Value::Multiple(vec![prev_value, val]);
                     }
                     Value::Multiple(vec) => vec.push(val),
                 })
-                .or_insert(Value::Sinlge(val));
+                .or_insert(Value::Single(val));
         }
         QueryString { data }
     }

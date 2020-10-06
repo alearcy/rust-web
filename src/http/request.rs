@@ -12,6 +12,21 @@ pub struct Request<'buf> {
     query: Option<QueryString<'buf>>,
 }
 
+// getters
+impl<'buf> Request<'buf> {
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    pub fn method(&self) -> &Methods {
+        &self.method
+    }
+
+    pub fn query_string(&self) -> Option<&QueryString> {
+        self.query.as_ref()
+    }
+}
+
 // trait for Request presa da TryFrom
 impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     type Error = ParseError;
@@ -24,24 +39,15 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
         let request = str::from_utf8(buf)?;
         //usando lo shadowing delle variabili, request ogni volta è il pezzo di stringa successiva
         //ecco perché nella tupla posso estrarre il valore che mi serviva e poi il resto della stringa nella request
-        let (method, request) = get_next_word(request).ok_or(ParseError::InvaildRequest)?;
-        let (mut path, request) = get_next_word(request).ok_or(ParseError::InvaildRequest)?;
-        let (protocol, _) = get_next_word(request).ok_or(ParseError::InvaildRequest)?;
+        let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         if protocol != "HTTP/1.1" {
             return Err(ParseError::InvalidProtocol);
         }
 
         let method: Methods = method.parse()?;
         let mut query_string = None;
-
-        //questo è uguale alla riga 46 che è più pulita
-        // match path.find("?") {
-        //     Some(i) => {
-        //         query_string = Some(&path[i + 1..]);
-        //         path = &path[..i];
-        //     },
-        //     None => {}
-        // }
 
         if let Some(i) = path.find("?") {
             query_string = Some(QueryString::from(&path[i + 1..]));
@@ -66,9 +72,8 @@ fn get_next_word(request: &str) -> Option<(&str, &str)> {
 }
 
 // CUSTOM ERRORS ENUM AND METHODS
-
 pub enum ParseError {
-    InvaildRequest,
+    InvalidRequest,
     InvalidEncoding,
     InvalidProtocol,
     InvalidMethod,
@@ -89,7 +94,7 @@ impl From<Utf8Error> for ParseError {
 impl ParseError {
     fn message(&self) -> &str {
         match self {
-            Self::InvaildRequest => "Invalid request",
+            Self::InvalidRequest => "Invalid request",
             Self::InvalidEncoding => "Invalid encoding",
             Self::InvalidProtocol => "Invalid protocol",
             Self::InvalidMethod => "Invalid method",
