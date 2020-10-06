@@ -43,6 +43,7 @@ impl Server {
                                 Ok(request) => handler.handle_request(&request),
                                 Err(e) => handler.handle_bad_request(&e),
                             };
+                            // send the created response and turn error if exists
                             if let Err(e) = response.send(&mut stream) {
                                 println!("Failed to send response {}", e);
                             }
